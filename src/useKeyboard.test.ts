@@ -1,20 +1,28 @@
 import {useKeyboard} from './useKeyboard'
 import {act, renderHook} from '@testing-library/react-hooks'
-import {Keyboard} from 'react-native'
+import {Keyboard, KeyboardEventName} from 'react-native'
+
+type Coordinates = {
+  screenX: number
+  screenY: number
+  width: number
+  height: number
+}
 
 describe('useKeyboard', () => {
   const mockCoords = {screenX: 0, screenY: 0, width: 0, height: 0}
   const emitKeyboardEvent = ({
-    show = true,
+    eventType,
     startCoordinates = mockCoords,
     endCoordinates = mockCoords,
+  }: {
+    eventType: KeyboardEventName
+    startCoordinates?: Coordinates
+    endCoordinates?: Coordinates
   }) => {
     const mockEvent = {startCoordinates, endCoordinates}
 
-    Keyboard.emit(
-      show ? 'keyboardDidShow' : 'keyboardDidHide',
-      show ? mockEvent : null,
-    )
+    Keyboard.emit(eventType, eventType === 'keyboardDidHide' ? null : mockEvent)
   }
 
   describe('setKeyboardHeight: number', () => {
@@ -29,7 +37,10 @@ describe('useKeyboard', () => {
       const {result} = renderHook(() => useKeyboard())
 
       act(() => {
-        emitKeyboardEvent({show: true, endCoordinates: {...mockCoords, height}})
+        emitKeyboardEvent({
+          eventType: 'keyboardDidShow',
+          endCoordinates: {...mockCoords, height},
+        })
       })
 
       expect(result.current.keyboardHeight).toBe(height)
@@ -40,16 +51,55 @@ describe('useKeyboard', () => {
       const {result} = renderHook(() => useKeyboard())
 
       act(() => {
-        emitKeyboardEvent({show: true, endCoordinates: {...mockCoords, height}})
+        emitKeyboardEvent({
+          eventType: 'keyboardDidShow',
+          endCoordinates: {...mockCoords, height},
+        })
       })
 
       expect(result.current.keyboardHeight).toBe(height)
 
       act(() => {
-        emitKeyboardEvent({show: false})
+        emitKeyboardEvent({eventType: 'keyboardDidHide'})
       })
 
       expect(result.current.keyboardHeight).toBe(0)
+    })
+
+    it('should update keyboard height when keyboard changes frame', () => {
+      const height = 123
+      const {result} = renderHook(() => useKeyboard())
+
+      act(() => {
+        emitKeyboardEvent({
+          eventType: 'keyboardDidShow',
+          endCoordinates: {...mockCoords, height},
+        })
+      })
+
+      expect(result.current.keyboardHeight).toBe(height)
+
+      const willChangeFrameHeight = 124
+
+      act(() => {
+        emitKeyboardEvent({
+          eventType: 'keyboardWillChangeFrame',
+          endCoordinates: {...mockCoords, height: willChangeFrameHeight},
+        })
+      })
+
+      expect(result.current.keyboardHeight).toBe(willChangeFrameHeight)
+
+      const didChangeFrameHeight = 125
+
+      act(() => {
+        emitKeyboardEvent({
+          eventType: 'keyboardDidChangeFrame',
+          endCoordinates: {...mockCoords, height: didChangeFrameHeight},
+        })
+      })
+
+      expect(result.current.keyboardHeight).toBe(didChangeFrameHeight)
     })
   })
 
@@ -65,7 +115,7 @@ describe('useKeyboard', () => {
       const {keyboardShown: initial} = result.current
 
       act(() => {
-        emitKeyboardEvent({show: true})
+        emitKeyboardEvent({eventType: 'keyboardDidShow'})
       })
 
       const {keyboardShown: afterOpen} = result.current
@@ -78,13 +128,13 @@ describe('useKeyboard', () => {
       const {keyboardShown: initial} = result.current
 
       act(() => {
-        emitKeyboardEvent({show: true})
+        emitKeyboardEvent({eventType: 'keyboardDidShow'})
       })
 
       const {keyboardShown: afterOpen} = result.current
 
       act(() => {
-        emitKeyboardEvent({show: false})
+        emitKeyboardEvent({eventType: 'keyboardDidHide'})
       })
 
       const {keyboardShown: afterClose} = result.current
