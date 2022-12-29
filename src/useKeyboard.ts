@@ -46,6 +46,14 @@ export function useKeyboard() {
       setKeyboardHeight(0)
     }
   }
+  const handleKeyboardWillChangeFrame: KeyboardEventListener = (e) => {
+    setCoordinates({start: e.startCoordinates, end: e.endCoordinates})
+    setKeyboardHeight(e.endCoordinates.height)
+  }
+  const handleKeyboardDidChangeFrame: KeyboardEventListener = (e) => {
+    setCoordinates({start: e.startCoordinates, end: e.endCoordinates})
+    setKeyboardHeight(e.endCoordinates.height)
+  }
 
   useEffect(() => {
     let subscriptions: EmitterSubscription[]
@@ -55,6 +63,14 @@ export function useKeyboard() {
         Keyboard.addListener('keyboardDidShow', handleKeyboardDidShow),
         Keyboard.addListener('keyboardWillHide', handleKeyboardWillHide),
         Keyboard.addListener('keyboardDidHide', handleKeyboardDidHide),
+        Keyboard.addListener(
+          'keyboardWillChangeFrame',
+          handleKeyboardWillChangeFrame,
+        ),
+        Keyboard.addListener(
+          'keyboardDidChangeFrame',
+          handleKeyboardDidChangeFrame,
+        ),
       ]
     } else {
       subscriptions = [
