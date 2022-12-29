@@ -1,5 +1,11 @@
 import {useEffect, useState} from 'react'
-import {Keyboard, KeyboardEventListener, ScreenRect} from 'react-native'
+import {
+  EmitterSubscription,
+  Keyboard,
+  KeyboardEventListener,
+  Platform,
+  ScreenRect,
+} from 'react-native'
 
 const emptyCoordinates = Object.freeze({
   screenX: 0,
@@ -42,12 +48,20 @@ export function useKeyboard() {
   }
 
   useEffect(() => {
-    const subscriptions = [
-      Keyboard.addListener('keyboardWillShow', handleKeyboardWillShow),
-      Keyboard.addListener('keyboardDidShow', handleKeyboardDidShow),
-      Keyboard.addListener('keyboardWillHide', handleKeyboardWillHide),
-      Keyboard.addListener('keyboardDidHide', handleKeyboardDidHide),
-    ]
+    let subscriptions: EmitterSubscription[]
+    if (Platform.OS === 'ios') {
+      subscriptions = [
+        Keyboard.addListener('keyboardWillShow', handleKeyboardWillShow),
+        Keyboard.addListener('keyboardDidShow', handleKeyboardDidShow),
+        Keyboard.addListener('keyboardWillHide', handleKeyboardWillHide),
+        Keyboard.addListener('keyboardDidHide', handleKeyboardDidHide),
+      ]
+    } else {
+      subscriptions = [
+        Keyboard.addListener('keyboardDidShow', handleKeyboardDidShow),
+        Keyboard.addListener('keyboardDidHide', handleKeyboardDidHide),
+      ]
+    }
 
     return () => {
       subscriptions.forEach((subscription) => subscription.remove())
